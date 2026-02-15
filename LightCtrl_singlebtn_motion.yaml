@@ -1,5 +1,5 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v20260215)
+  name: Éclairage intelligent avec détecteur et bouton (v20260215B)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
@@ -108,21 +108,21 @@ blueprint:
     event_single:
       name: Événement simple clic
       description: Nom de l'événement pour un simple clic (ex. "single" ou "1_single")
-      default: "single"
+      default: "multi_press_1"
       selector:
         text:
 
     event_double:
       name: Événement double clic
       description: Nom de l'événement pour un double clic (ex. "double" ou "2_double")
-      default: "double"
+      default: "multi_press_2"
       selector:
         text:
 
     event_triple:
       name: Événement triple clic (optionnel)
       description: Laisser vide pour désactiver le triple clic
-      default: ""
+      default: "multi_press_3"
       selector:
         text:
 
