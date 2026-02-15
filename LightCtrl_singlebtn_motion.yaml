@@ -1,5 +1,5 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v20260215F)
+  name: Éclairage intelligent avec détecteur et bouton (v20260215G)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
@@ -502,19 +502,29 @@ action:
             
             🔢 Timestamps (debug):
               - Now (float): {{ now_ts }}
-              - Sunrise base (float): {{ sunrise_base_ts }}
-              - Sunset base (float): {{ sunset_base_ts }}
-              - Sunrise calculated (float): {{ sunrise_time }}
-              - Sunset calculated (float): {{ sunset_time }}
+              - Next sunrise (raw): {{ sunrise_next }}
+              - Next sunset (raw): {{ sunset_next }}
+              - Time until next sunrise: {{ ((sunrise_next | float - now_ts | float) / 3600) | round(1) }}h
+              - Time until next sunset: {{ ((sunset_next | float - now_ts | float) / 3600) | round(1) }}h
+              - Sunrise base (calculated): {{ sunrise_base_ts }}
+              - Sunset base (calculated): {{ sunset_base_ts }}
+              - Sunrise with offset: {{ sunrise_time }}
+              - Sunset with offset: {{ sunset_time }}
             
             🕐 Heures formatées:
               - Now: {{ now().strftime('%H:%M:%S') }}
-              - Sunrise: {{ sunrise_next_ts | timestamp_custom('%H:%M') }} → {{ sunrise_time | float | timestamp_custom('%H:%M') }}
-              - Sunset: {{ sunset_next_ts | timestamp_custom('%H:%M') }} → {{ sunset_time | float | timestamp_custom('%H:%M') }}
-            
+              - Next sunrise (raw): {{ (sunrise_next | float) | timestamp_custom('%H:%M', true) }}
+              - Next sunset (raw): {{ (sunset_next | float) | timestamp_custom('%H:%M', true) }}
+              - Sunrise base: {{ (sunrise_base_ts | float) | timestamp_custom('%H:%M', true) }}
+              - Sunset base: {{ (sunset_base_ts | float) | timestamp_custom('%H:%M', true) }}
+              - Sunrise calculated: {{ (sunrise_time | float) | timestamp_custom('%H:%M', true) }}
+              - Sunset calculated: {{ (sunset_time | float) | timestamp_custom('%H:%M', true) }}
+          
             ✅ Comparaisons:
               - now >= sunrise: {{ now_ts | float >= sunrise_time | float }}
               - now <= sunset: {{ now_ts | float <= sunset_time | float }}
+              - (now - sunrise): {{ ((now_ts | float - sunrise_time | float) / 3600) | round(1) }}h
+              - (sunset - now): {{ ((sunset_time | float - now_ts | float) / 3600) | round(1) }}h
             
             💡 Luminosités:
               - Single: {{ bright_single }}%
