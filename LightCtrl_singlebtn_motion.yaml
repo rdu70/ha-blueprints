@@ -1,5 +1,5 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v20260215E)
+  name: Éclairage intelligent avec détecteur et bouton (v20260215F)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
@@ -379,33 +379,37 @@ variables:
   sunrise_off: !input sunrise_offset
   sunset_off: !input sunset_offset
 
-  # Timestamp actuel (float)
+  # Timestamp actuel
   now_ts: "{{ now().timestamp() | float }}"
   
-  # Récupérer next_rising et next_setting
-  sunrise_next_ts: "{{ as_timestamp(state_attr('sun.sun', 'next_rising')) | float }}"
-  sunset_next_ts: "{{ as_timestamp(state_attr('sun.sun', 'next_setting')) | float }}"
+  # Récupérer les timestamps next_rising et next_setting
+  sunrise_next: "{{ as_timestamp(state_attr('sun.sun', 'next_rising')) | float }}"
+  sunset_next: "{{ as_timestamp(state_attr('sun.sun', 'next_setting')) | float }}"
   
-  # Calculer le lever du soleil pertinent (aujourd'hui ou hier)
-  # Si next_rising est dans le futur ET aujourd'hui, c'est bon
-  # Sinon, c'est demain, donc on prend hier (next - 24h)
+  # Calculer le lever du soleil pertinent (celui d'AUJOURD'HUI)
+  # Si next_rising est dans le futur, c'est que nous sommes AVANT le lever → c'est aujourd'hui
+  # Si next_rising est très loin (> 12h dans le futur), c'est demain → prendre hier (next - 24h)
   sunrise_base_ts: >
     {% set next_rise = as_timestamp(state_attr('sun.sun', 'next_rising')) | float %}
     {% set now = now().timestamp() | float %}
-    {% if next_rise > now %}
-      {{ next_rise }}
-    {% else %}
+    {% if (next_rise - now) > 43200 %}
+      {# next_rising est demain (plus de 12h dans le futur) #}
       {{ next_rise - 86400 }}
+    {% else %}
+      {# next_rising est aujourd'hui #}
+      {{ next_rise }}
     {% endif %}
   
-  # Calculer le coucher du soleil pertinent
+  # Calculer le coucher du soleil pertinent (celui d'AUJOURD'HUI)
   sunset_base_ts: >
     {% set next_set = as_timestamp(state_attr('sun.sun', 'next_setting')) | float %}
     {% set now = now().timestamp() | float %}
-    {% if next_set > now %}
-      {{ next_set }}
-    {% else %}
+    {% if (next_set - now) > 43200 %}
+      {# next_setting est demain (plus de 12h dans le futur) #}
       {{ next_set - 86400 }}
+    {% else %}
+      {# next_setting est aujourd'hui #}
+      {{ next_set }}
     {% endif %}
   
   # Appliquer les offsets (convertir minutes en secondes)
