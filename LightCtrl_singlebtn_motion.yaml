@@ -380,12 +380,40 @@ variables:
   sunset_off: !input sunset_offset
 
   # Calcul période (jour/nuit) avec offsets
-  # Sunrise : on ajoute l'offset (par défaut +30min = 30 minutes APRÈS le lever)
-  # Sunset : on ajoute l'offset (par défaut -30min = 30 minutes AVANT le coucher)
-  sunrise_time: "{{ as_timestamp(state_attr('sun.sun', 'next_rising')) + (sunrise_off * 60) }}"
-  sunset_time: "{{ as_timestamp(state_attr('sun.sun', 'next_setting')) + (sunset_off * 60) }}"
-  now_time: "{{ as_timestamp(now()) }}"
-  is_day: "{{ now_time > sunrise_time and now_time < sunset_time }}"
+  now_ts: "{{ now().timestamp() }}"
+  
+  # Récupérer les timestamps du jour actuel
+  sunrise_next: "{{ as_timestamp(state_attr('sun.sun', 'next_rising')) }}"
+  sunset_next: "{{ as_timestamp(state_attr('sun.sun', 'next_setting')) }}"
+  
+  # Si next_rising > now, on est avant le lever d'aujourd'hui
+  # Sinon, next_rising est demain, donc on recule de 24h
+  sunrise_base: >
+    {% set next_rise = as_timestamp(state_attr('sun.sun', 'next_rising')) %}
+    {% set now = now().timestamp() %}
+    {% if next_rise > now %}
+      {{ next_rise }}
+    {% else %}
+      {{ next_rise - 86400 }}
+    {% endif %}
+  
+  # Si next_setting > now, c'est le coucher d'aujourd'hui
+  # Sinon, on recule de 24h
+  sunset_base: >
+    {% set next_set = as_timestamp(state_attr('sun.sun', 'next_setting')) %}
+    {% set now = now().timestamp() %}
+    {% if next_set > now %}
+      {{ next_set }}
+    {% else %}
+      {{ next_set - 86400 }}
+    {% endif %}
+  
+  # Application des offsets (en secondes)
+  sunrise_time: "{{ sunrise_base | float + (sunrise_off * 60) }}"
+  sunset_time: "{{ sunset_base | float + (sunset_off * 60) }}"
+  
+  # Calcul is_day
+  is_day: "{{ now_ts >= sunrise_time and now_ts <= sunset_time }}"
 
   # Vérification si le détecteur doit être actif selon le mode et la période
   motion_should_trigger: >
