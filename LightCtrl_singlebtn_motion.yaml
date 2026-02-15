@@ -483,7 +483,7 @@ actions:
                     data:
                       brightness_pct: "{{ bright_triple }}"
                       transition: "{{ trans_dimmer }}"
-              
+
               # --- LONG PRESS : Dimmer progressif ---
               - conditions:
                   - condition: template
@@ -496,10 +496,8 @@ actions:
                       while:
                         - condition: template
                           value_template: "{{ state_attr(button_entity, 'event_type') == event_long }}"
-                        - condition: numeric_state
-                          entity_id: !input light_entity
-                          attribute: brightness
-                          above: "{{ bright_min }}"
+                        - condition: template
+                          value_template: "{{ state_attr(light, 'brightness') | int(0) > bright_min | int(0) }}"
                       sequence:
                         - action: light.turn_on
                           target:
