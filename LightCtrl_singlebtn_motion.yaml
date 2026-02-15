@@ -1,10 +1,10 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v3.2)
+  name: Éclairage intelligent avec détecteur et bouton (v3.3)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
     - Détection automatique de mouvement OPTIONNELLE (modes jour/nuit basés sur le lever/coucher du soleil)
-    - Minuteries auto/manuelle avec gestion intelligente
+    - Minuteries auto/manuelle avec gestion intelligente (utilise les durées configurées dans les timers)
     - Mode automatique activable/désactivable
     - Suivi de l'origine de l'allumage (détecteur vs manuel)
     - Configuration minimale : seulement la lumière est obligatoire
@@ -64,7 +64,7 @@ blueprint:
     
     timer_auto:
       name: Minuterie automatique (optionnel)
-      description: Timer pour extinction automatique (requis seulement si détecteur configuré)
+      description: Timer pour extinction automatique après détection de mouvement (utilise la durée configurée dans le timer)
       default: {}
       selector:
         entity:
@@ -73,7 +73,7 @@ blueprint:
     
     timer_manual:
       name: Minuterie manuelle (optionnel)
-      description: Timer pour extinction manuelle (requis seulement si bouton configuré)
+      description: Timer pour extinction après allumage manuel (utilise la durée configurée dans le timer). Si non défini, pas d'extinction automatique après allumage manuel.
       default: {}
       selector:
         entity:
@@ -225,23 +225,6 @@ blueprint:
         text:
     
     # ========================================
-    # MINUTERIES
-    # ========================================
-    timer_auto_duration:
-      name: Durée minuterie automatique
-      description: Durée avant extinction automatique après détection
-      default: "00:05:00"
-      selector:
-        time:
-    
-    timer_manual_duration:
-      name: Durée minuterie manuelle
-      description: Durée avant extinction après allumage manuel
-      default: "01:00:00"
-      selector:
-        time:
-    
-    # ========================================
     # TRANSITIONS
     # ========================================
     transition_on:
@@ -346,10 +329,6 @@ variables:
   event_triple: !input event_triple_click
   event_long: !input event_long_press
   
-  # Durées minuteries
-  duration_auto: !input timer_auto_duration
-  duration_manual: !input timer_manual_duration
-  
   # Transitions
   trans_on: !input transition_on
   trans_off_manual: !input transition_off_manual
@@ -443,7 +422,7 @@ action:
                   brightness_pct: "{{ bright_day }}"
                   transition: "{{ trans_detector }}"
           
-          # Démarrer/relancer minuterie auto
+          # Démarrer/relancer minuterie auto (utilise la durée du timer)
           - if:
               - condition: template
                 value_template: "{{ timer_auto_valid }}"
@@ -451,8 +430,6 @@ action:
               - action: timer.start
                 target:
                   entity_id: !input timer_auto
-                data:
-                  duration: "{{ duration_auto }}"
       
       # ====================================================================
       # BOUTON - SIMPLE CLIC
@@ -498,7 +475,7 @@ action:
                       brightness_pct: "{{ bright_single }}"
                       transition: "{{ trans_on }}"
                   
-                  # Démarrer minuterie manuelle
+                  # Démarrer minuterie manuelle SI définie
                   - if:
                       - condition: template
                         value_template: "{{ timer_manual_valid }}"
@@ -506,8 +483,6 @@ action:
                       - action: timer.start
                         target:
                           entity_id: !input timer_manual
-                        data:
-                          duration: "{{ duration_manual }}"
             
             # Sinon → éteindre
             default:
@@ -517,7 +492,7 @@ action:
                 data:
                   transition: "{{ trans_off_manual }}"
               
-              # Annuler minuterie manuelle
+              # Annuler minuterie manuelle SI définie
               - if:
                   - condition: template
                     value_template: "{{ timer_manual_valid }}"
@@ -563,7 +538,7 @@ action:
               brightness_pct: "{{ bright_double }}"
               transition: "{{ trans_on }}"
           
-          # Démarrer minuterie manuelle
+          # Démarrer minuterie manuelle SI définie
           - if:
               - condition: template
                 value_template: "{{ timer_manual_valid }}"
@@ -571,8 +546,6 @@ action:
               - action: timer.start
                 target:
                   entity_id: !input timer_manual
-                data:
-                  duration: "{{ duration_manual }}"
       
       # ====================================================================
       # BOUTON - TRIPLE CLIC (VEILLEUSE)
@@ -611,7 +584,7 @@ action:
               brightness_pct: "{{ bright_triple }}"
               transition: "{{ trans_on }}"
           
-          # Démarrer minuterie manuelle
+          # Démarrer minuterie manuelle SI définie
           - if:
               - condition: template
                 value_template: "{{ timer_manual_valid }}"
@@ -619,8 +592,6 @@ action:
               - action: timer.start
                 target:
                   entity_id: !input timer_manual
-                data:
-                  duration: "{{ duration_manual }}"
       
       # ====================================================================
       # BOUTON - APPUI LONG (DIMMER)
