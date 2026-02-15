@@ -85,22 +85,22 @@ blueprint:
     # ========================================
     event_single:
       name: Événement simple clic
-      description: Nom de l'événement pour un simple clic (ex. "single" ou "1_single")
-      default: "single"
+      description: Nom de l'événement pour un simple clic (ex. "single" ou "1_single" ou "multi_press_1")
+      default: "multi_press_1"
       selector:
         text:
     
     event_double:
       name: Événement double clic
       description: Nom de l'événement pour un double clic (ex. "double" ou "2_double")
-      default: "double"
+      default: "multi_press_2"
       selector:
         text:
     
     event_triple:
       name: Événement triple clic (optionnel)
       description: Laisser vide pour désactiver le triple clic
-      default: ""
+      default: "multi_press_3"
       selector:
         text:
     
@@ -117,7 +117,7 @@ blueprint:
     brightness_day:
       name: Luminosité jour
       description: Luminosité pour détection de jour (%)
-      default: 100
+      default: 80
       selector:
         number:
           min: 1
@@ -137,7 +137,7 @@ blueprint:
     brightness_single:
       name: Luminosité simple clic
       description: Luminosité pour simple clic (%)
-      default: 100
+      default: 80
       selector:
         number:
           min: 1
@@ -147,7 +147,7 @@ blueprint:
     brightness_double:
       name: Luminosité double clic
       description: Luminosité pour double clic (%)
-      default: 50
+      default: 100
       selector:
         number:
           min: 1
@@ -157,7 +157,7 @@ blueprint:
     brightness_triple:
       name: Luminosité triple clic
       description: Luminosité pour triple clic (%) - ignoré si triple clic désactivé
-      default: 10
+      default: 11
       selector:
         number:
           min: 1
@@ -167,7 +167,7 @@ blueprint:
     brightness_min:
       name: Luminosité minimale pour dimmer
       description: Seuil minimal avant extinction lors du dimming (%)
-      default: 5
+      default: 6
       selector:
         number:
           min: 1
@@ -240,7 +240,7 @@ blueprint:
     sunrise_offset:
       name: Décalage lever du soleil
       description: Minutes avant (-) ou après (+) le lever du soleil
-      default: 0
+      default: 30
       selector:
         number:
           min: -120
@@ -250,7 +250,7 @@ blueprint:
     sunset_offset:
       name: Décalage coucher du soleil
       description: Minutes avant (-) ou après (+) le coucher du soleil
-      default: 0
+      default: -30
       selector:
         number:
           min: -120
