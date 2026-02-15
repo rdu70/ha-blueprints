@@ -472,7 +472,7 @@ action:
     then:
       - action: persistent_notification.create
         data:
-          title: "🔍 Debug Automation v3.5"
+          title: "🔍 Debug Automation Light controller - 1-btn&motion"
           message: |
             ⚡ Trigger:
               - Type: {{ trigger_type }}
