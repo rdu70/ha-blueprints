@@ -1,7 +1,367 @@
+blueprint:
+  name: Éclairage intelligent avec détecteur et bouton (v3.3.1)
+  description: >
+    Gère l'éclairage d'une pièce avec :
+    - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
+    - Détection automatique de mouvement OPTIONNELLE (modes jour/nuit basés sur le lever/coucher du soleil)
+    - Minuteries auto/manuelle avec gestion intelligente (utilise les durées configurées dans les timers)
+    - Mode automatique activable/désactivable
+    - Suivi de l'origine de l'allumage (détecteur vs manuel)
+    - Configuration minimale : seulement la lumière est obligatoire
+    - Utilisation native des pourcentages pour les luminosités
+  domain: automation
+  
+  input:
+    # ========================================
+    # ENTITÉS PRINCIPALES
+    # ========================================
+    light_entity:
+      name: Lumière (OBLIGATOIRE)
+      description: La lumière à contrôler
+      selector:
+        entity:
+          filter:
+            - domain: light
+    
+    button_event:
+      name: Bouton de contrôle (optionnel)
+      description: Event entity du bouton (ex. IKEA Somrig) - laisser vide pour désactiver
+      default: {}
+      selector:
+        entity:
+          filter:
+            - domain: event
+    
+    motion_sensor:
+      name: Détecteur de mouvement (optionnel)
+      description: Capteur binaire de présence ou de mouvement - laisser vide pour désactiver
+      default: {}
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              device_class: 
+                - occupancy
+                - motion
+    
+    auto_mode_boolean:
+      name: Autorisation mode automatique (optionnel)
+      description: Input boolean pour autoriser/interdire la détection automatique (requis seulement si détecteur configuré)
+      default: {}
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    
+    lighting_source_boolean:
+      name: Source d'allumage (optionnel)
+      description: Input boolean indiquant l'origine - ON=auto, OFF=manuel (requis seulement si détecteur ET bouton configurés)
+      default: {}
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    
+    timer_auto:
+      name: Minuterie automatique (optionnel)
+      description: Timer pour extinction automatique après détection de mouvement (utilise la durée configurée dans le timer)
+      default: {}
+      selector:
+        entity:
+          filter:
+            - domain: timer
+    
+    timer_manual:
+      name: Minuterie manuelle (optionnel)
+      description: >
+        Timer pour extinction après allumage manuel (utilise la durée configurée dans le timer). 
+        Si non défini, pas d'extinction automatique après allumage manuel.
+      default: {}
+      selector:
+        entity:
+          filter:
+            - domain: timer
+    
+    # ========================================
+    # CONFIGURATION BOUTON
+    # ========================================
+    event_single:
+      name: Code événement simple clic
+      description: Valeur event_type pour simple clic (défaut IKEA Somrig)
+      default: "short_release"
+      selector:
+        text:
+    
+    event_double:
+      name: Code événement double clic
+      description: Valeur event_type pour double clic (défaut IKEA Somrig)
+      default: "double_press"
+      selector:
+        text:
+    
+    event_triple:
+      name: Code événement triple clic
+      description: Valeur event_type pour triple clic (défaut vide = désactivé)
+      default: ""
+      selector:
+        text:
+    
+    event_long:
+      name: Code événement appui long
+      description: Valeur event_type pour appui long (défaut IKEA Somrig)
+      default: "long_press"
+      selector:
+        text:
+    
+    # ========================================
+    # LUMINOSITÉS (en %)
+    # ========================================
+    brightness_single:
+      name: Luminosité simple clic
+      description: Luminosité pour simple clic (%)
+      default: 80
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    
+    brightness_double:
+      name: Luminosité double clic
+      description: Luminosité pour double clic (%)
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    
+    brightness_triple:
+      name: Luminosité triple clic
+      description: Luminosité pour triple clic - veilleuse (%)
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    
+    brightness_day:
+      name: Luminosité détecteur jour
+      description: Luminosité pour détection de mouvement en journée (%)
+      default: 80
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    
+    brightness_night:
+      name: Luminosité détecteur nuit
+      description: Luminosité pour détection de mouvement la nuit (%)
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    
+    brightness_min:
+      name: Luminosité minimale dimmer
+      description: Seuil minimal avant extinction lors du dimming (%)
+      default: 6
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    
+    # ========================================
+    # PARAMÈTRES DIMMER
+    # ========================================
+    dim_step:
+      name: Pas de variation dimmer
+      description: Réduction de luminosité à chaque pas (%)
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 20
+          unit_of_measurement: "%"
+    
+    dim_interval:
+      name: Intervalle dimmer
+      description: Délai entre chaque pas de variation (secondes)
+      default: 0.3
+      selector:
+        number:
+          min: 0.1
+          max: 2
+          step: 0.1
+          unit_of_measurement: "s"
+    
+    # ========================================
+    # TRANSITIONS
+    # ========================================
+    transition_on:
+      name: Transition allumage
+      description: Durée de transition à l'allumage (secondes)
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: "s"
+    
+    transition_off_manual:
+      name: Transition extinction manuelle
+      description: Durée de transition pour extinction manuelle (secondes)
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: "s"
+    
+    transition_off_auto:
+      name: Transition extinction automatique
+      description: Durée de transition pour extinction automatique (secondes)
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 30
+          unit_of_measurement: "s"
+    
+    # ========================================
+    # GESTION SOLAIRE
+    # ========================================
+    sunset_offset:
+      name: Décalage coucher du soleil
+      description: Minutes avant (-) ou après (+) le coucher pour passer en mode nuit
+      default: -30
+      selector:
+        number:
+          min: -120
+          max: 120
+          unit_of_measurement: "min"
+    
+    sunrise_offset:
+      name: Décalage lever du soleil
+      description: Minutes avant (-) ou après (+) le lever pour passer en mode jour
+      default: 30
+      selector:
+        number:
+          min: -120
+          max: 120
+          unit_of_measurement: "min"
+
+# ============================================================================
+# DÉCLENCHEURS
+# ============================================================================
+trigger:
+  # Détecteur de mouvement
+  - platform: state
+    entity_id: !input motion_sensor
+    to: "on"
+    id: motion_detected
+  
+  # Événements bouton - CORRIGÉ
+  - platform: state
+    entity_id: !input button_event
+    attribute: event_type
+    id: button_pressed
+  
+  # Fins de minuteries
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input timer_auto
+    id: timer_auto_finished
+  
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input timer_manual
+    id: timer_manual_finished
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  # Entités principales
+  light: !input light_entity
+  button_entity: !input button_event
+  motion: !input motion_sensor
+  auto_mode: !input auto_mode_boolean
+  source_bool: !input lighting_source_boolean
+  timer_auto_entity: !input timer_auto
+  timer_manual_entity: !input timer_manual
+  
+  # Codes événements
+  event_single: !input event_single
+  event_double: !input event_double
+  event_triple: !input event_triple
+  event_long: !input event_long
+  
+  # Luminosités (%)
+  bright_single: !input brightness_single
+  bright_double: !input brightness_double
+  bright_triple: !input brightness_triple
+  bright_day: !input brightness_day
+  bright_night: !input brightness_night
+  bright_min: !input brightness_min
+  
+  # Dimmer
+  dim_step: !input dim_step
+  dim_interval: !input dim_interval
+  
+  # Transitions
+  trans_on: !input transition_on
+  trans_off_manual: !input transition_off_manual
+  trans_off_auto: !input transition_off_auto
+  
+  # Offsets solaires
+  sunset_off: !input sunset_offset
+  sunrise_off: !input sunrise_offset
+  
+  # Validation des entités optionnelles
+  button_valid: "{{ button_entity not in ['unavailable', 'unknown', 'none', ''] and button_entity is not none }}"
+  motion_valid: "{{ motion not in ['unavailable', 'unknown', 'none', ''] and motion is not none }}"
+  auto_mode_valid: "{{ auto_mode not in ['unavailable', 'unknown', 'none', ''] and auto_mode is not none }}"
+  source_bool_valid: "{{ source_bool not in ['unavailable', 'unknown', 'none', ''] and source_bool is not none }}"
+  timer_auto_valid: "{{ timer_auto_entity not in ['unavailable', 'unknown', 'none', ''] and timer_auto_entity is not none }}"
+  timer_manual_valid: "{{ timer_manual_entity not in ['unavailable', 'unknown', 'none', ''] and timer_manual_entity is not none }}"
+  
+  # Helper pour récupérer l'événement bouton
+  button_event_type: >
+    {% if button_valid and trigger.id == 'button_pressed' %}
+      {{ state_attr(button_entity, 'event_type') }}
+    {% else %}
+      none
+    {% endif %}
+  
+  # Calcul jour/nuit basé sur le soleil
+  is_night: >
+    {% set sunrise = state_attr('sun.sun', 'next_rising') | as_timestamp %}
+    {% set sunset = state_attr('sun.sun', 'next_setting') | as_timestamp %}
+    {% set sunrise_adj = sunrise + (sunrise_off * 60) %}
+    {% set sunset_adj = sunset + (sunset_off * 60) %}
+    {% set now_ts = now().timestamp() %}
+    
+    {% if now_ts >= sunset_adj or now_ts < sunrise_adj %}
+      true
+    {% else %}
+      false
+    {% endif %}
+
+# ============================================================================
+# ACTIONS
+# ============================================================================
 action:
   - choose:
       # ====================================================================
-      # DÉTECTEUR DE MOUVEMENT - INCHANGÉ
+      # DÉTECTEUR DE MOUVEMENT
       # ====================================================================
       - conditions:
           - condition: trigger
@@ -14,10 +374,65 @@ action:
             entity_id: !input auto_mode_boolean
             state: "on"
         sequence:
-          # ... (garder la séquence existante)
+          # Si lumière éteinte → allumer
+          - if:
+              - condition: state
+                entity_id: !input light_entity
+                state: "off"
+            then:
+              # Allumer avec luminosité selon jour/nuit
+              - action: light.turn_on
+                target:
+                  entity_id: !input light_entity
+                data:
+                  brightness_pct: >
+                    {% if is_night %}
+                      {{ bright_night }}
+                    {% else %}
+                      {{ bright_day }}
+                    {% endif %}
+                  transition: "{{ trans_on }}"
+              
+              # Marquer comme allumage automatique
+              - if:
+                  - condition: template
+                    value_template: "{{ source_bool_valid }}"
+                then:
+                  - action: input_boolean.turn_on
+                    target:
+                      entity_id: !input lighting_source_boolean
+              
+              # Démarrer minuterie auto si définie
+              - if:
+                  - condition: template
+                    value_template: "{{ timer_auto_valid }}"
+                then:
+                  - action: timer.start
+                    target:
+                      entity_id: !input timer_auto
+          
+          # Si lumière allumée par détecteur → relancer minuterie
+          - if:
+              - condition: state
+                entity_id: !input light_entity
+                state: "on"
+              - condition: template
+                value_template: "{{ source_bool_valid }}"
+              - condition: state
+                entity_id: !input lighting_source_boolean
+                state: "on"
+            then:
+              # Relancer minuterie auto si définie
+              - if:
+                  - condition: template
+                    value_template: "{{ timer_auto_valid }}"
+                then:
+                  - action: timer.start
+                    target:
+                      entity_id: !input timer_auto
       
       # ====================================================================
-      # BOUTON - SIMPLE CLIC - CORRIGÉ
+      # BOUTON - SIMPLE CLIC
       # ====================================================================
       - conditions:
           - condition: trigger
@@ -87,7 +502,7 @@ action:
                       entity_id: !input timer_manual
       
       # ====================================================================
-      # BOUTON - DOUBLE CLIC - CORRIGÉ
+      # BOUTON - DOUBLE CLIC
       # ====================================================================
       - conditions:
           - condition: trigger
@@ -133,13 +548,15 @@ action:
                   entity_id: !input timer_manual
       
       # ====================================================================
-      # BOUTON - TRIPLE CLIC - CORRIGÉ
+      # BOUTON - TRIPLE CLIC
       # ====================================================================
       - conditions:
           - condition: trigger
             id: button_pressed
           - condition: template
             value_template: "{{ button_valid }}"
+          - condition: template
+            value_template: "{{ event_triple != '' }}"
           - condition: template
             value_template: "{{ button_event_type == event_triple }}"
         sequence:
@@ -179,7 +596,7 @@ action:
                   entity_id: !input timer_manual
       
       # ====================================================================
-      # BOUTON - APPUI LONG (DIMMER) - CORRIGÉ
+      # BOUTON - APPUI LONG (DIMMER)
       # ====================================================================
       - conditions:
           - condition: trigger
@@ -235,7 +652,7 @@ action:
                   transition: "{{ trans_off_manual }}"
       
       # ====================================================================
-      # FIN MINUTERIE MANUELLE - INCHANGÉ
+      # FIN MINUTERIE MANUELLE
       # ====================================================================
       - conditions:
           - condition: trigger
@@ -250,7 +667,7 @@ action:
               transition: "{{ trans_off_auto }}"
       
       # ====================================================================
-      # FIN MINUTERIE AUTOMATIQUE - INCHANGÉ
+      # FIN MINUTERIE AUTOMATIQUE
       # ====================================================================
       - conditions:
           - condition: trigger
@@ -258,6 +675,7 @@ action:
           - condition: template
             value_template: "{{ timer_auto_valid }}"
         sequence:
+          # Vérifier que la source est bien "auto"
           - condition: template
             value_template: "{{ source_bool_valid }}"
           
@@ -265,6 +683,7 @@ action:
             entity_id: !input lighting_source_boolean
             state: "on"
           
+          # Éteindre
           - action: light.turn_off
             target:
               entity_id: !input light_entity
