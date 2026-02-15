@@ -1,5 +1,5 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v20260215C)
+  name: Éclairage intelligent avec détecteur et bouton (v20260215D)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
@@ -379,41 +379,45 @@ variables:
   sunrise_off: !input sunrise_offset
   sunset_off: !input sunset_offset
 
-  # Calcul période (jour/nuit) avec offsets
-  now_ts: "{{ now().timestamp() }}"
+  # Timestamp actuel (float)
+  now_ts: "{{ now().timestamp() | float }}"
   
-  # Récupérer les timestamps du jour actuel
-  sunrise_next: "{{ as_timestamp(state_attr('sun.sun', 'next_rising')) }}"
-  sunset_next: "{{ as_timestamp(state_attr('sun.sun', 'next_setting')) }}"
+  # Récupérer next_rising et next_setting
+  sunrise_next_ts: "{{ as_timestamp(state_attr('sun.sun', 'next_rising')) | float }}"
+  sunset_next_ts: "{{ as_timestamp(state_attr('sun.sun', 'next_setting')) | float }}"
   
-  # Si next_rising > now, on est avant le lever d'aujourd'hui
-  # Sinon, next_rising est demain, donc on recule de 24h
-  sunrise_base: >
-    {% set next_rise = as_timestamp(state_attr('sun.sun', 'next_rising')) %}
-    {% set now = now().timestamp() %}
+  # Calculer le lever du soleil pertinent (aujourd'hui ou hier)
+  # Si next_rising est dans le futur ET aujourd'hui, c'est bon
+  # Sinon, c'est demain, donc on prend hier (next - 24h)
+  sunrise_base_ts: >
+    {% set next_rise = as_timestamp(state_attr('sun.sun', 'next_rising')) | float %}
+    {% set now = now().timestamp() | float %}
     {% if next_rise > now %}
       {{ next_rise }}
     {% else %}
       {{ next_rise - 86400 }}
     {% endif %}
   
-  # Si next_setting > now, c'est le coucher d'aujourd'hui
-  # Sinon, on recule de 24h
-  sunset_base: >
-    {% set next_set = as_timestamp(state_attr('sun.sun', 'next_setting')) %}
-    {% set now = now().timestamp() %}
+  # Calculer le coucher du soleil pertinent
+  sunset_base_ts: >
+    {% set next_set = as_timestamp(state_attr('sun.sun', 'next_setting')) | float %}
+    {% set now = now().timestamp() | float %}
     {% if next_set > now %}
       {{ next_set }}
     {% else %}
       {{ next_set - 86400 }}
     {% endif %}
   
-  # Application des offsets (en secondes)
-  sunrise_time: "{{ sunrise_base | float + (sunrise_off * 60) }}"
-  sunset_time: "{{ sunset_base | float + (sunset_off * 60) }}"
+  # Appliquer les offsets (convertir minutes en secondes)
+  sunrise_time: "{{ (sunrise_base_ts | float) + (sunrise_off | int * 60) }}"
+  sunset_time: "{{ (sunset_base_ts | float) + (sunset_off | int * 60) }}"
   
-  # Calcul is_day
-  is_day: "{{ now_ts >= sunrise_time and now_ts <= sunset_time }}"
+  # Calcul is_day avec conversion explicite en float
+  is_day: >
+    {% set now = now().timestamp() | float %}
+    {% set sunrise = sunrise_time | float %}
+    {% set sunset = sunset_time | float %}
+    {{ now >= sunrise and now <= sunset }}
 
   # Vérification si le détecteur doit être actif selon le mode et la période
   motion_should_trigger: >
