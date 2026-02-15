@@ -1,5 +1,5 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v20260215D)
+  name: Éclairage intelligent avec détecteur et bouton (v20260215E)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
@@ -495,9 +495,22 @@ action:
               - Is day: {{ is_day }}
               - Sunrise offset: {{ sunrise_off }} min
               - Sunset offset: {{ sunset_off }} min
-              - Sunrise time: {{ as_timestamp(state_attr('sun.sun', 'next_rising')) | timestamp_custom('%H:%M') }} → {{ (sunrise_time) | timestamp_custom('%H:%M') }}
-              - Sunset time: {{ as_timestamp(state_attr('sun.sun', 'next_setting')) | timestamp_custom('%H:%M') }} → {{ (sunset_time) | timestamp_custom('%H:%M') }}
-              - Current time: {{ now().strftime('%H:%M:%S') }}
+            
+            🔢 Timestamps (debug):
+              - Now (float): {{ now_ts }}
+              - Sunrise base (float): {{ sunrise_base_ts }}
+              - Sunset base (float): {{ sunset_base_ts }}
+              - Sunrise calculated (float): {{ sunrise_time }}
+              - Sunset calculated (float): {{ sunset_time }}
+            
+            🕐 Heures formatées:
+              - Now: {{ now().strftime('%H:%M:%S') }}
+              - Sunrise: {{ sunrise_next_ts | timestamp_custom('%H:%M') }} → {{ sunrise_time | float | timestamp_custom('%H:%M') }}
+              - Sunset: {{ sunset_next_ts | timestamp_custom('%H:%M') }} → {{ sunset_time | float | timestamp_custom('%H:%M') }}
+            
+            ✅ Comparaisons:
+              - now >= sunrise: {{ now_ts | float >= sunrise_time | float }}
+              - now <= sunset: {{ now_ts | float <= sunset_time | float }}
             
             💡 Luminosités:
               - Single: {{ bright_single }}%
