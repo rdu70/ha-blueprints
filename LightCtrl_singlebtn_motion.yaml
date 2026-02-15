@@ -1,5 +1,5 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v3.4)
+  name: Éclairage intelligent avec détecteur et bouton (v20260215)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
@@ -382,17 +382,17 @@ variables:
 # ============================================================================
 action:
   # DEBUG - À RETIRER APRÈS TESTS
-  - action: persistent_notification.create
-    data:
-      title: "🔍 Debug Automation"
-      message: |
-        Trigger type: {{ trigger_type }}
-        Button event: {{ button_event_type }}
-        Button valid: {{ button_valid }}
-        Motion valid: {{ motion_valid }}
-        Trigger entity: {{ trigger.entity_id | default('N/A') }}
-        Event single: {{ event_single }}
-        Platform: {{ trigger.platform }}
+  #- action: persistent_notification.create
+  #  data:
+  #    title: "🔍 Debug Automation"
+  #    message: |
+  #      Trigger type: {{ trigger_type }}
+  #      Button event: {{ button_event_type }}
+  #      Button valid: {{ button_valid }}
+  #      Motion valid: {{ motion_valid }}
+  #      Trigger entity: {{ trigger.entity_id | default('N/A') }}
+  #      Event single: {{ event_single }}
+  #      Platform: {{ trigger.platform }}
   
   - choose:
       # ====================================================================
