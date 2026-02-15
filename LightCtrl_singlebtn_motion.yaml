@@ -1,5 +1,5 @@
 blueprint:
-  name: Éclairage intelligent avec détecteur et bouton (v20260215B)
+  name: Éclairage intelligent avec détecteur et bouton (v20260215C)
   description: >
     Gère l'éclairage d'une pièce avec :
     - Contrôle manuel par bouton OPTIONNEL (marche/arrêt, dimmer, multi-press avec luminosités personnalisées)
